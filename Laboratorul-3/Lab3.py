@@ -3,37 +3,49 @@ from threading import Thread
 from queue import Queue
 
 # Функция для чтения прокси из файла
+# Функция для чтения прокси из файла
 def read_proxies(filename):
+    print("Чтение списка прокси")
     with open(filename, 'r') as file:
-        return [line.strip() for line in file]
+        proxies = [line.strip() for line in file]
+    print(f"Прочитано {len(proxies)} прокси.")
+    return proxies
 
 # Функция для проверки прокси
 def check_proxy(proxy):
+    print(f"Проверка прокси: {proxy}")
     try:
         response = requests.get('http://httpbin.org/ip', proxies={"http": f"http://{proxy}", "https": f"https://{proxy}"}, timeout=5)
         if response.status_code == 200:
+            print(f"Прокси {proxy} работает.")
             return True
-    except:
-        return False
+    except Exception as e:  # Изменение здесь
+        print(f"Прокси {proxy} не работает: {e}")
+    return False
 
 # Функция для нахождения двух работающих прокси
 def find_working_proxies(proxy_list):
     working_proxies = []
+    print("Поиск рабочих прокси...")
     for proxy in proxy_list:
         if check_proxy(proxy):
             working_proxies.append(proxy)
             if len(working_proxies) == 2:
+                print("Найдено достаточно рабочих прокси.")
                 break
     return working_proxies
 
 # Функция для выполнения запросов с использованием рабочих прокси
 def make_request(method, proxies, q):
     proxy = {'http': f'http://{proxies[0]}', 'https': f'http://{proxies[1]}'}
+    print(f"Выполнение {method} запроса через {proxies[0]} и {proxies[1]}...")
     try:
         response = requests.request(method, URLS[method], proxies=proxy)
         q.put((method, response.text))
+        print(f"{method} запрос выполнен успешно.")
     except requests.RequestException as e:
         q.put((method, f"Ошибка запроса: {e}"))
+        print(f"Ошибка при выполнении {method} запроса: {e}")
 
 # URL для тестовых запросов
 URLS = {
